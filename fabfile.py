@@ -2,8 +2,45 @@ from __future__ import with_statement
 from fabric.api import *
 from fabric.contrib.console import confirm
 
-env.hosts = ['localhost']
+
 env.use_ssh_config = False
+env.hosts = ["dev.magrabbit.com",]
+env.user = "huymac"
+env.password = ""
+env.parallel = True
+env.roledefs = {
+    'db': ['db1', 'db2'],
+    'web': ['web1', 'web2', 'web3'],
+}
+
+def hostname_check():
+    run("hostname")
+
+def command(cmd):
+    run(cmd)
+
+def sudo_command(cmd):
+    sudo(cmd)
+
+def install(package):
+    sudo("apt-get -y install %s" % package)
+
+def local_cmd():
+    local("echo fabtest >> test.log")
+
+@parallel
+def pcmd(cmd):
+    run(cmd)
+
+@roles('db')
+def migrate():
+    # Database stuff here.
+    pass
+
+@roles('web')
+def update():
+    # Code updates here.
+    pass
 
 def test():
     with settings(warn_only=True):
@@ -20,6 +57,10 @@ def deploy():
     with cd(code_dir):
         run("git pull")
         run("touch app.wsgi")
+
+def deploy2():
+    execute(migrate)
+    execute(update)
 
 def commit():
     local("git add . && git commit -m 'Test'")
@@ -39,5 +80,18 @@ def task2():
 def prepare_deploy():
     commit()
     push()
+
+@parallel
+def runs_in_parallel():
+    pass
+
+def runs_serially():
+    pass
+
+@parallel(pool_size=5)
+def heavy_task():
+    # lots of heavy local lifting or lots of IO here
+    print "TEST"
+
     
     
